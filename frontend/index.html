@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OIDC Lab 3 – КП-31</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .card {
+      background: #1a1d2e;
+      border: 1px solid #2d3252;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 560px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #7c8cf8;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-bottom: 32px;
+    }
+
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #475569;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: #7c8cf8;
+      color: #0f1117;
+    }
+    .btn-primary:hover { background: #6474e5; }
+
+    .btn-secondary {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+    }
+    .btn-secondary:hover { background: #263347; color: #e2e8f0; }
+
+    .btn-danger {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 1px solid #991b1b;
+    }
+    .btn-danger:hover { background: #991b1b; }
+
+    .status-box {
+      background: #0d1117;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 20px;
+      min-height: 56px;
+    }
+
+    .status-label {
+      font-size: 0.72rem;
+      color: #475569;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .status-value {
+      font-size: 0.88rem;
+      color: #94a3b8;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .status-value.success { color: #4ade80; }
+    .status-value.error   { color: #f87171; }
+    .status-value.info    { color: #7c8cf8; }
+
+    pre {
+      background: #0d1117;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 0.78rem;
+      color: #7dd3fc;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      line-height: 1.6;
+      max-height: 280px;
+      overflow-y: auto;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #1e293b;
+      margin: 24px 0;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .badge-green { background: #14532d; color: #4ade80; }
+    .badge-red   { background: #7f1d1d; color: #fca5a5; }
+    .badge-gray  { background: #1e293b; color: #64748b; }
+
+    .flow-steps {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .step {
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 99px;
+      border: 1px solid #1e293b;
+      color: #475569;
+      transition: all 0.2s;
+    }
+    .step.active { border-color: #7c8cf8; color: #7c8cf8; background: #1a1d3e; }
+    .step.done   { border-color: #166534; color: #4ade80; background: #0d2318; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>OIDC Authentication Lab</h1>
+  <div class="subtitle">Лабораторна робота №3 · Гончаров Ілля · КП-31</div>
+
+  <div class="flow-steps">
+    <span class="step" id="step-idle">1. Idle</span>
+    <span class="step" id="step-login">2. Login</span>
+    <span class="step" id="step-callback">3. Callback</span>
+    <span class="step" id="step-token">4. Token</span>
+    <span class="step" id="step-userinfo">5. User Info</span>
+  </div>
+
+  <div class="status-box">
+    <div class="status-label">Статус аутентифікації</div>
+    <div class="status-value" id="auth-status">
+      Не аутентифіковано <span class="badge badge-gray">—</span>
+    </div>
+  </div>
+
+  <div class="section-title">Дії</div>
+  <div class="btn-group">
+    <button class="btn-primary" onclick="doLogin()">🔐 Login (OIDC)</button>
+    <button class="btn-secondary" onclick="getUserInfo()">👤 /user-info</button>
+    <button class="btn-secondary" onclick="getHello()">👋 /hello</button>
+    <button class="btn-danger" onclick="doLogout()">🚪 Logout</button>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-title">Відповідь сервера</div>
+  <div class="status-box" style="margin-bottom:12px">
+    <div class="status-label">HTTP статус</div>
+    <div class="status-value" id="http-status">—</div>
+  </div>
+
+  <div class="section-title">Тіло відповіді / User Info</div>
+  <pre id="response-body">Натисніть кнопку для виконання запиту...</pre>
+
+  <hr class="divider">
+
+  <!-- Token info -->
+  <div class="section-title">JWT Payload (id_token з куки) <span id="token-badge" class="badge badge-gray">відсутній</span></div>
+  <pre id="token-info">—</pre>
+</div>
+
+<script>
+
+  function setStep(name) {
+    ['idle','login','callback','token','userinfo'].forEach(s => {
+      const el = document.getElementById(`step-${s}`);
+      if (!el) return;
+      el.className = 'step' + (s === name ? ' active' : '');
+    });
+  }
+
+  function doneStep(name) {
+    const el = document.getElementById(`step-${name}`);
+    if (el) el.className = 'step done';
+  }
+
+  function setAuthStatus(text, type = '') {
+    const el = document.getElementById('auth-status');
+    el.className = `status-value ${type}`;
+    el.innerHTML = text;
+  }
+
+  function showResponse(status, body) {
+    const statusEl = document.getElementById('http-status');
+    const bodyEl   = document.getElementById('response-body');
+
+    const ok = status >= 200 && status < 300;
+    statusEl.className = `status-value ${ok ? 'success' : 'error'}`;
+    statusEl.textContent = `${status} ${ok ? '✓' : '✗'}`;
+
+    if (typeof body === 'object') {
+      bodyEl.textContent = JSON.stringify(body, null, 2);
+    } else {
+      bodyEl.textContent = body;
+    }
+  }
+
+  function getCookie(name) {
+    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
+    return match ? decodeURIComponent(match[1]) : null;
+  }
+
+  function decodeJwt(token) {
+    try {
+      const part = token.split('.')[1];
+      return JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/')));
+    } catch { return null; }
+  }
+
+  function updateTokenDisplay() {
+    const tokenEl  = document.getElementById('token-info');
+    const badgeEl  = document.getElementById('token-badge');
+
+    tokenEl.textContent = 'id_token зберігається в HttpOnly куці\n(недоступна через JavaScript – захист від XSS)\n\nВикористайте /user-info для перевірки токена.';
+    badgeEl.className   = 'badge badge-green';
+    badgeEl.textContent = 'HttpOnly Cookie';
+  }
+
+
+  function doLogin() {
+    setStep('login');
+    setAuthStatus('Перенаправлення на IAM (Casdoor)... <span class="badge badge-gray">↗</span>', 'info');
+    window.location.href = '/login';
+  }
+
+  async function getUserInfo() {
+    setStep('userinfo');
+    setAuthStatus('Запит до /user-info...', 'info');
+    try {
+      const res  = await fetch('/user-info', { credentials: 'include' });
+      const data = await res.json();
+      showResponse(res.status, data);
+
+      if (res.status === 200) {
+        doneStep('userinfo');
+        doneStep('token');
+        setAuthStatus(
+          `Аутентифіковано: <b>${data.name || data.preferred_username || data.sub}</b>
+           <span class="badge badge-green">✓ valid token</span>`,
+          'success'
+        );
+        updateTokenDisplay();
+      } else if (res.status === 401) {
+        setAuthStatus('Токен відсутній або невалідний <span class="badge badge-red">401</span>', 'error');
+      }
+    } catch (e) {
+      showResponse(0, { error: e.message });
+      setAuthStatus('Помилка з\'єднання з сервером', 'error');
+    }
+  }
+
+  async function getHello() {
+    try {
+      const res  = await fetch('/hello', { credentials: 'include' });
+      const text = await res.text();
+      showResponse(res.status, text);
+    } catch (e) {
+      showResponse(0, { error: e.message });
+    }
+  }
+
+  function doLogout() {
+    setStep('idle');
+    setAuthStatus('Не аутентифіковано <span class="badge badge-gray">—</span>');
+    document.getElementById('response-body').textContent = '—';
+    document.getElementById('http-status').textContent = '—';
+    document.getElementById('token-info').textContent = '—';
+    document.getElementById('token-badge').className = 'badge badge-gray';
+    document.getElementById('token-badge').textContent = 'відсутній';
+    window.location.href = '/logout';
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('logged_in') === '1') {
+      doneStep('callback');
+      doneStep('login');
+      setAuthStatus('Логін виконано — перевіряємо токен...', 'info');
+      getUserInfo();
+    } else {
+      setStep('idle');
+      doneStep('idle');
+    }
+  });
+</script>
+</body>
+</html>

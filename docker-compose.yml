@@ -1,0 +1,45 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: casdoor-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-casdoor}
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -p\"$${MYSQL_ROOT_PASSWORD}\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  casdoor:
+    image: casbin/casdoor:latest
+    container_name: casdoor
+    ports:
+      - "8000:8000"
+    environment:
+      RUNNING_IN_DOCKER: "true"
+      driverName: mysql
+      dataSourceName: root:${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}@tcp(mysql:3306)/
+      dbName: ${MYSQL_DATABASE:-casdoor}
+    volumes:
+      - ./casdoor-conf:/conf
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: casdoor-proxy
+    ports:
+      - "8443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ${TLS_CERT_PATH:-./certs/server.crt}:/etc/nginx/certs/server.crt:ro
+      - ${TLS_KEY_PATH:-./certs/server.key}:/etc/nginx/certs/server.key:ro
+    depends_on:
+      - casdoor
+
+volumes:
+  mysql-data:
