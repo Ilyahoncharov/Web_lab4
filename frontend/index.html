@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OIDC Lab 3 – КП-31</title>
+  <title>Lab 4 – WebSocket Crypto · КП-31</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -15,8 +15,8 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       padding: 24px;
+      gap: 24px;
     }
 
     .card {
@@ -25,16 +25,12 @@
       border-radius: 16px;
       padding: 40px;
       width: 100%;
-      max-width: 560px;
+      max-width: 640px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.4);
     }
 
-    h1 {
-      font-size: 1.4rem;
-      font-weight: 700;
-      color: #7c8cf8;
-      margin-bottom: 4px;
-    }
+    h1 { font-size: 1.4rem; font-weight: 700; color: #7c8cf8; margin-bottom: 4px; }
+    h2 { font-size: 1.2rem; font-weight: 700; color: #7c8cf8; margin-bottom: 4px; }
 
     .subtitle {
       font-size: 0.85rem;
@@ -51,12 +47,7 @@
       font-weight: 600;
     }
 
-    .btn-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
+    .btn-group { display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap; }
 
     button {
       border: none;
@@ -68,25 +59,17 @@
       transition: all 0.15s ease;
     }
 
-    .btn-primary {
-      background: #7c8cf8;
-      color: #0f1117;
-    }
+    .btn-primary   { background: #7c8cf8; color: #0f1117; }
     .btn-primary:hover { background: #6474e5; }
 
-    .btn-secondary {
-      background: #1e293b;
-      color: #94a3b8;
-      border: 1px solid #334155;
-    }
+    .btn-secondary { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
     .btn-secondary:hover { background: #263347; color: #e2e8f0; }
 
-    .btn-danger {
-      background: #7f1d1d;
-      color: #fca5a5;
-      border: 1px solid #991b1b;
-    }
+    .btn-danger { background: #7f1d1d; color: #fca5a5; border: 1px solid #991b1b; }
     .btn-danger:hover { background: #991b1b; }
+
+    .btn-success { background: #14532d; color: #4ade80; border: 1px solid #166534; }
+    .btn-success:hover { background: #166534; }
 
     .status-box {
       background: #0d1117;
@@ -98,80 +81,106 @@
     }
 
     .status-label {
-      font-size: 0.72rem;
-      color: #475569;
-      margin-bottom: 6px;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
+      font-size: 0.72rem; color: #475569; margin-bottom: 6px;
+      text-transform: uppercase; letter-spacing: 0.08em;
     }
 
-    .status-value {
-      font-size: 0.88rem;
-      color: #94a3b8;
-      word-break: break-all;
-      line-height: 1.5;
-    }
-
+    .status-value { font-size: 0.88rem; color: #94a3b8; word-break: break-all; line-height: 1.5; }
     .status-value.success { color: #4ade80; }
     .status-value.error   { color: #f87171; }
     .status-value.info    { color: #7c8cf8; }
 
     pre {
-      background: #0d1117;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 16px;
-      font-size: 0.78rem;
-      color: #7dd3fc;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-      line-height: 1.6;
-      max-height: 280px;
-      overflow-y: auto;
+      background: #0d1117; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 16px; font-size: 0.78rem; color: #7dd3fc; overflow-x: auto;
+      white-space: pre-wrap; word-break: break-all; line-height: 1.6;
+      max-height: 280px; overflow-y: auto;
     }
 
-    .divider {
-      border: none;
-      border-top: 1px solid #1e293b;
-      margin: 24px 0;
-    }
+    .divider { border: none; border-top: 1px solid #1e293b; margin: 24px 0; }
 
     .badge {
-      display: inline-block;
-      font-size: 0.7rem;
-      padding: 2px 8px;
-      border-radius: 99px;
-      font-weight: 600;
-      margin-left: 8px;
+      display: inline-block; font-size: 0.7rem; padding: 2px 8px;
+      border-radius: 99px; font-weight: 600; margin-left: 8px;
     }
     .badge-green { background: #14532d; color: #4ade80; }
     .badge-red   { background: #7f1d1d; color: #fca5a5; }
     .badge-gray  { background: #1e293b; color: #64748b; }
+    .badge-blue  { background: #1e3a5f; color: #7dd3fc; }
 
-    .flow-steps {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 28px;
-      flex-wrap: wrap;
-    }
-
+    .flow-steps { display: flex; gap: 6px; margin-bottom: 28px; flex-wrap: wrap; }
     .step {
-      font-size: 0.72rem;
-      padding: 4px 10px;
-      border-radius: 99px;
-      border: 1px solid #1e293b;
-      color: #475569;
-      transition: all 0.2s;
+      font-size: 0.72rem; padding: 4px 10px; border-radius: 99px;
+      border: 1px solid #1e293b; color: #475569; transition: all 0.2s;
     }
     .step.active { border-color: #7c8cf8; color: #7c8cf8; background: #1a1d3e; }
     .step.done   { border-color: #166534; color: #4ade80; background: #0d2318; }
+
+    .ws-status-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+    }
+
+    .ws-dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: #334155; flex-shrink: 0; transition: background 0.3s;
+    }
+    .ws-dot.connected    { background: #4ade80; box-shadow: 0 0 6px #4ade8088; }
+    .ws-dot.connecting   { background: #fbbf24; animation: pulse 1s infinite; }
+    .ws-dot.disconnected { background: #f87171; }
+
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    .ws-status-text { font-size: 0.85rem; color: #64748b; }
+
+    .coin-grid {
+      display: grid; grid-template-columns: repeat(5, 1fr);
+      gap: 8px; margin-bottom: 20px;
+    }
+
+    .coin-label {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 4px; padding: 10px 4px; background: #0d1117;
+      border: 1px solid #1e293b; border-radius: 10px; cursor: pointer;
+      transition: all 0.15s;
+    }
+    .coin-label:hover { border-color: #334155; }
+    .coin-label input[type=checkbox] { display: none; }
+    .coin-label input:checked ~ .coin-name { color: #7c8cf8; }
+    .coin-label.selected { border-color: #7c8cf8; background: #1a1d3e; }
+
+    .coin-icon { font-size: 1.4rem; }
+    .coin-name { font-size: 0.72rem; font-weight: 600; color: #64748b; }
+
+    .price-table { width: 100%; border-collapse: collapse; }
+    .price-table th {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #475569; padding: 8px 10px; text-align: left;
+      border-bottom: 1px solid #1e293b;
+    }
+    .price-table td {
+      padding: 10px; font-size: 0.88rem; border-bottom: 1px solid #0d1117;
+      transition: background 0.15s;
+    }
+    .price-table tr:last-child td { border-bottom: none; }
+    .price-table tr.flash td { background: #1a1d3e; }
+
+    .price-val { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .change-pos { color: #4ade80; }
+    .change-neg { color: #f87171; }
+    .change-neu { color: #64748b; }
+
+    .log-box {
+      background: #0d1117; border: 1px solid #1e293b; border-radius: 10px;
+      padding: 12px; font-size: 0.75rem; color: #475569; max-height: 140px;
+      overflow-y: auto; font-family: monospace; line-height: 1.6;
+    }
   </style>
 </head>
 <body>
+
 <div class="card">
   <h1>OIDC Authentication Lab</h1>
-  <div class="subtitle">Лабораторна робота №3 · Гончаров Ілля · КП-31</div>
+  <div class="subtitle">Лабораторна робота №3 / №4 · Гончаров Ілля · КП-31</div>
 
   <div class="flow-steps">
     <span class="step" id="step-idle">1. Idle</span>
@@ -190,10 +199,10 @@
 
   <div class="section-title">Дії</div>
   <div class="btn-group">
-    <button class="btn-primary" onclick="doLogin()">🔐 Login (OIDC)</button>
+    <button class="btn-primary"   onclick="doLogin()">🔐 Login (OIDC)</button>
     <button class="btn-secondary" onclick="getUserInfo()">👤 /user-info</button>
     <button class="btn-secondary" onclick="getHello()">👋 /hello</button>
-    <button class="btn-danger" onclick="doLogout()">🚪 Logout</button>
+    <button class="btn-danger"    onclick="doLogout()">🚪 Logout</button>
   </div>
 
   <hr class="divider">
@@ -209,134 +218,351 @@
 
   <hr class="divider">
 
-  <!-- Token info -->
-  <div class="section-title">JWT Payload (id_token з куки) <span id="token-badge" class="badge badge-gray">відсутній</span></div>
+  <div class="section-title">
+    JWT Payload (id_token з куки)
+    <span id="token-badge" class="badge badge-gray">відсутній</span>
+  </div>
   <pre id="token-info">—</pre>
 </div>
 
+<div class="card">
+  <h2>WebSocket Crypto Stream</h2>
+  <div class="subtitle">
+    Binance miniTicker · Protobuf · wss://localhost/ws
+    <span id="proto-badge" class="badge badge-gray">proto not ready</span>
+  </div>
+
+  <div class="ws-status-row">
+    <div class="ws-dot disconnected" id="ws-dot"></div>
+    <span class="ws-status-text" id="ws-status-text">Disconnected</span>
+  </div>
+
+  <div class="section-title">Підписатись на монети</div>
+  <div class="coin-grid">
+    <label class="coin-label" id="label-BTC">
+      <input type="checkbox" value="BTCUSDT" onchange="updateLabel(this)">
+      <span class="coin-icon">₿</span>
+      <span class="coin-name">BTC</span>
+    </label>
+    <label class="coin-label" id="label-ETH">
+      <input type="checkbox" value="ETHUSDT" onchange="updateLabel(this)">
+      <span class="coin-icon">Ξ</span>
+      <span class="coin-name">ETH</span>
+    </label>
+    <label class="coin-label" id="label-SOL">
+      <input type="checkbox" value="SOLUSDT" onchange="updateLabel(this)">
+      <span class="coin-icon">◎</span>
+      <span class="coin-name">SOL</span>
+    </label>
+    <label class="coin-label" id="label-ADA">
+      <input type="checkbox" value="ADAUSDT" onchange="updateLabel(this)">
+      <span class="coin-icon">₳</span>
+      <span class="coin-name">ADA</span>
+    </label>
+    <label class="coin-label" id="label-XRP">
+      <input type="checkbox" value="XRPUSDT" onchange="updateLabel(this)">
+      <span class="coin-icon">✕</span>
+      <span class="coin-name">XRP</span>
+    </label>
+  </div>
+
+  <div class="btn-group">
+    <button class="btn-primary"   onclick="connectWs()">🔌 Connect</button>
+    <button class="btn-success"   onclick="sendSubscribe()">📡 Subscribe</button>
+    <button class="btn-secondary" onclick="disconnectWs()">⏹ Disconnect</button>
+  </div>
+
+  <div class="section-title">Ціни в реальному часі</div>
+  <div class="status-box" style="padding:0; overflow:hidden;">
+    <table class="price-table" id="price-table">
+      <thead>
+        <tr>
+          <th>Символ</th>
+          <th>Ціна (USDT)</th>
+          <th>Зміна за 24 год</th>
+          <th>Оновлено</th>
+        </tr>
+      </thead>
+      <tbody id="price-tbody">
+        <tr><td colspan="4" style="color:#334155;padding:16px;text-align:center">
+          Підключіться та підпишіться на монети
+        </td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <hr class="divider">
+
+  <div class="section-title">WS лог</div>
+  <div class="log-box" id="ws-log">— очікування підключення —</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/protobufjs@7/dist/protobuf.min.js"></script>
+
 <script>
+let protoRoot     = null;
+let ServerMessage = null;
+let ClientMessage = null;
 
-  function setStep(name) {
-    ['idle','login','callback','token','userinfo'].forEach(s => {
-      const el = document.getElementById(`step-${s}`);
-      if (!el) return;
-      el.className = 'step' + (s === name ? ' active' : '');
-    });
-  }
-
-  function doneStep(name) {
-    const el = document.getElementById(`step-${name}`);
-    if (el) el.className = 'step done';
-  }
-
-  function setAuthStatus(text, type = '') {
-    const el = document.getElementById('auth-status');
-    el.className = `status-value ${type}`;
-    el.innerHTML = text;
-  }
-
-  function showResponse(status, body) {
-    const statusEl = document.getElementById('http-status');
-    const bodyEl   = document.getElementById('response-body');
-
-    const ok = status >= 200 && status < 300;
-    statusEl.className = `status-value ${ok ? 'success' : 'error'}`;
-    statusEl.textContent = `${status} ${ok ? '✓' : '✗'}`;
-
-    if (typeof body === 'object') {
-      bodyEl.textContent = JSON.stringify(body, null, 2);
-    } else {
-      bodyEl.textContent = body;
+const protoDescriptor = {
+  nested: {
+    crypto: {
+      nested: {
+        ClientMessage: {
+          fields: {
+            symbols: { rule: 'repeated', type: 'string', id: 1 }
+          }
+        },
+        PriceUpdate: {
+          fields: {
+            symbol:        { type: 'string', id: 1 },
+            price:         { type: 'string', id: 2 },
+            changePercent: { type: 'string', id: 3 },
+            timestamp:     { type: 'string', id: 4 }
+          }
+        },
+        ServerMessage: {
+          oneofs: { payload: { oneof: ['priceUpdate', 'error', 'info'] } },
+          fields: {
+            priceUpdate: { type: 'crypto.PriceUpdate', id: 1 },
+            error:       { type: 'string', id: 2 },
+            info:        { type: 'string', id: 3 }
+          }
+        }
+      }
     }
   }
+};
 
-  function getCookie(name) {
-    const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
-    return match ? decodeURIComponent(match[1]) : null;
+window.addEventListener('load', () => {
+  if (typeof protobuf === 'undefined') {
+    wsLog('[PROTO] protobufjs failed to load from CDN');
+    return;
   }
+  protoRoot     = protobuf.Root.fromJSON(protoDescriptor);
+  ServerMessage = protoRoot.lookupType('crypto.ServerMessage');
+  ClientMessage = protoRoot.lookupType('crypto.ClientMessage');
+  document.getElementById('proto-badge').className   = 'badge badge-green';
+  document.getElementById('proto-badge').textContent = 'proto ready';
+  wsLog('[PROTO] Schema loaded — ready to connect');
+});
 
-  function decodeJwt(token) {
+let ws = null;
+
+function setWsDot(state) {
+  const dot  = document.getElementById('ws-dot');
+  const text = document.getElementById('ws-status-text');
+  dot.className = `ws-dot ${state}`;
+  const labels = { connected: 'Connected', connecting: 'Connecting…', disconnected: 'Disconnected' };
+  text.textContent = labels[state] || state;
+}
+
+function wsLog(msg) {
+  const box = document.getElementById('ws-log');
+  const ts  = new Date().toISOString().slice(11, 23);
+  box.textContent += `[${ts}] ${msg}\n`;
+  box.scrollTop = box.scrollHeight;
+}
+
+function connectWs() {
+  if (ws && ws.readyState === WebSocket.OPEN) { wsLog('Already connected'); return; }
+  if (!protoRoot) { wsLog('Protobuf not ready yet'); return; }
+
+  setWsDot('connecting');
+  wsLog('Connecting to wss://localhost/ws …');
+  ws = new WebSocket('wss://localhost/ws');
+  ws.binaryType = 'arraybuffer';  
+
+  ws.onopen = () => {
+    setWsDot('connected');
+    wsLog('Connection established (TLS + WS handshake complete)');
+  };
+
+  ws.onmessage = (event) => {
     try {
-      const part = token.split('.')[1];
-      return JSON.parse(atob(part.replace(/-/g,'+').replace(/_/g,'/')));
-    } catch { return null; }
-  }
+      const buf = new Uint8Array(event.data);
+      const msg = ServerMessage.decode(buf);
 
-  function updateTokenDisplay() {
-    const tokenEl  = document.getElementById('token-info');
-    const badgeEl  = document.getElementById('token-badge');
-
-    tokenEl.textContent = 'id_token зберігається в HttpOnly куці\n(недоступна через JavaScript – захист від XSS)\n\nВикористайте /user-info для перевірки токена.';
-    badgeEl.className   = 'badge badge-green';
-    badgeEl.textContent = 'HttpOnly Cookie';
-  }
-
-
-  function doLogin() {
-    setStep('login');
-    setAuthStatus('Перенаправлення на IAM (Casdoor)... <span class="badge badge-gray">↗</span>', 'info');
-    window.location.href = '/login';
-  }
-
-  async function getUserInfo() {
-    setStep('userinfo');
-    setAuthStatus('Запит до /user-info...', 'info');
-    try {
-      const res  = await fetch('/user-info', { credentials: 'include' });
-      const data = await res.json();
-      showResponse(res.status, data);
-
-      if (res.status === 200) {
-        doneStep('userinfo');
-        doneStep('token');
-        setAuthStatus(
-          `Аутентифіковано: <b>${data.name || data.preferred_username || data.sub}</b>
-           <span class="badge badge-green">✓ valid token</span>`,
-          'success'
-        );
-        updateTokenDisplay();
-      } else if (res.status === 401) {
-        setAuthStatus('Токен відсутній або невалідний <span class="badge badge-red">401</span>', 'error');
+      if (msg.payload === 'priceUpdate') {
+        const u = msg.priceUpdate;
+        updatePriceTable(u.symbol, u.price, u.changePercent, u.timestamp);
+      } else if (msg.payload === 'info') {
+        wsLog(`[INFO] ${msg.info}`);
+      } else if (msg.payload === 'error') {
+        wsLog(`[ERROR] ${msg.error}`);
       }
     } catch (e) {
-      showResponse(0, { error: e.message });
-      setAuthStatus('Помилка з\'єднання з сервером', 'error');
+      wsLog(`[DECODE ERROR] ${e.message}`);
     }
-  }
+  };
 
-  async function getHello() {
-    try {
-      const res  = await fetch('/hello', { credentials: 'include' });
-      const text = await res.text();
-      showResponse(res.status, text);
-    } catch (e) {
-      showResponse(0, { error: e.message });
-    }
-  }
+  ws.onclose = (ev) => {
+    setWsDot('disconnected');
+    wsLog(`Disconnected (code=${ev.code})`);
+  };
 
-  function doLogout() {
-    setStep('idle');
-    setAuthStatus('Не аутентифіковано <span class="badge badge-gray">—</span>');
-    document.getElementById('response-body').textContent = '—';
-    document.getElementById('http-status').textContent = '—';
-    document.getElementById('token-info').textContent = '—';
-    document.getElementById('token-badge').className = 'badge badge-gray';
-    document.getElementById('token-badge').textContent = 'відсутній';
-    window.location.href = '/logout';
-  }
+  ws.onerror = () => wsLog('WebSocket error — check console');
+}
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('logged_in') === '1') {
-      doneStep('callback');
-      doneStep('login');
-      setAuthStatus('Логін виконано — перевіряємо токен...', 'info');
-      getUserInfo();
-    } else {
-      setStep('idle');
-      doneStep('idle');
-    }
+function disconnectWs() {
+  if (ws) { ws.close(); ws = null; }
+}
+
+function sendSubscribe() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    wsLog('Not connected — click Connect first');
+    return;
+  }
+  if (!ClientMessage) { wsLog('Protobuf not ready'); return; }
+
+  const checked = [...document.querySelectorAll('.coin-grid input:checked')];
+  const symbols = checked.map(cb => cb.value);
+
+  if (symbols.length === 0) { wsLog('Select at least one coin first'); return; }
+
+  const msg = ClientMessage.create({ symbols });
+  const buf = ClientMessage.encode(msg).finish();
+  ws.send(buf);
+  wsLog(`Sent subscribe (protobuf, ${buf.length} bytes): ${symbols.join(', ')}`);
+}
+
+function updateLabel(cb) {
+  const sym   = cb.value.replace('USDT', '');
+  const label = document.getElementById(`label-${sym}`);
+  if (label) label.classList.toggle('selected', cb.checked);
+}
+
+const SYMBOL_LABELS = {
+  BTCUSDT: 'BTC / USDT',
+  ETHUSDT: 'ETH / USDT',
+  SOLUSDT: 'SOL / USDT',
+  ADAUSDT: 'ADA / USDT',
+  XRPUSDT: 'XRP / USDT',
+};
+
+const priceRows = {};
+
+function updatePriceTable(symbol, price, changePct, timestamp) {
+  const tbody = document.getElementById('price-tbody');
+
+  const placeholder = tbody.querySelector('td[colspan]');
+  if (placeholder) tbody.innerHTML = '';
+
+  const priceFmt = parseFloat(price).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: price < 1 ? 6 : 2,
   });
+
+  const chg      = parseFloat(changePct);
+  const sign     = chg > 0 ? '+' : '';
+  const chgClass = chg > 0 ? 'change-pos' : chg < 0 ? 'change-neg' : 'change-neu';
+  const ts       = timestamp
+    ? new Date(parseInt(timestamp)).toLocaleTimeString('uk-UA')
+    : '—';
+
+  if (priceRows[symbol]) {
+    const tr = priceRows[symbol];
+    tr.cells[1].innerHTML = `<span class="price-val">$${priceFmt}</span>`;
+    tr.cells[2].innerHTML = `<span class="${chgClass}">${sign}${changePct}%</span>`;
+    tr.cells[3].textContent = ts;
+    tr.classList.remove('flash');
+    void tr.offsetWidth;
+    tr.classList.add('flash');
+    setTimeout(() => tr.classList.remove('flash'), 400);
+  } else {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${SYMBOL_LABELS[symbol] || symbol}</td>
+      <td><span class="price-val">$${priceFmt}</span></td>
+      <td><span class="${chgClass}">${sign}${changePct}%</span></td>
+      <td>${ts}</td>`;
+    tbody.appendChild(tr);
+    priceRows[symbol] = tr;
+  }
+}
+
+function setStep(name) {
+  ['idle','login','callback','token','userinfo'].forEach(s => {
+    const el = document.getElementById(`step-${s}`);
+    if (!el) return;
+    el.className = 'step' + (s === name ? ' active' : '');
+  });
+}
+function doneStep(name) {
+  const el = document.getElementById(`step-${name}`);
+  if (el) el.className = 'step done';
+}
+function setAuthStatus(text, type = '') {
+  const el = document.getElementById('auth-status');
+  el.className = `status-value ${type}`;
+  el.innerHTML = text;
+}
+function showResponse(status, body) {
+  const statusEl = document.getElementById('http-status');
+  const bodyEl   = document.getElementById('response-body');
+  const ok = status >= 200 && status < 300;
+  statusEl.className   = `status-value ${ok ? 'success' : 'error'}`;
+  statusEl.textContent = `${status} ${ok ? '✓' : '✗'}`;
+  bodyEl.textContent   = typeof body === 'object' ? JSON.stringify(body, null, 2) : body;
+}
+function doLogin() {
+  setStep('login');
+  setAuthStatus('Перенаправлення на IAM (Casdoor)… <span class="badge badge-gray">↗</span>', 'info');
+  window.location.href = '/login';
+}
+async function getUserInfo() {
+  setStep('userinfo');
+  setAuthStatus('Запит до /user-info…', 'info');
+  try {
+    const res  = await fetch('/user-info', { credentials: 'include' });
+    const data = await res.json();
+    showResponse(res.status, data);
+    if (res.status === 200) {
+      doneStep('userinfo'); doneStep('token');
+      setAuthStatus(
+        `Аутентифіковано: <b>${data.name || data.preferred_username || data.sub}</b>
+         <span class="badge badge-green">✓ valid token</span>`, 'success'
+      );
+      document.getElementById('token-info').textContent =
+        'id_token зберігається в HttpOnly куці\n(недоступна через JS — захист від XSS)\n\nВикористайте /user-info для перевірки.';
+      document.getElementById('token-badge').className   = 'badge badge-green';
+      document.getElementById('token-badge').textContent = 'HttpOnly Cookie';
+    } else if (res.status === 401) {
+      setAuthStatus('Токен відсутній або невалідний <span class="badge badge-red">401</span>', 'error');
+    }
+  } catch (e) {
+    showResponse(0, { error: e.message });
+    setAuthStatus("Помилка з'єднання з сервером", 'error');
+  }
+}
+async function getHello() {
+  try {
+    const res  = await fetch('/hello', { credentials: 'include' });
+    const text = await res.text();
+    showResponse(res.status, text);
+  } catch (e) { showResponse(0, { error: e.message }); }
+}
+function doLogout() {
+  setStep('idle');
+  setAuthStatus('Не аутентифіковано <span class="badge badge-gray">—</span>');
+  document.getElementById('response-body').textContent = '—';
+  document.getElementById('http-status').textContent   = '—';
+  document.getElementById('token-info').textContent    = '—';
+  document.getElementById('token-badge').className     = 'badge badge-gray';
+  document.getElementById('token-badge').textContent   = 'відсутній';
+  window.location.href = '/logout';
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('logged_in') === '1') {
+    doneStep('callback'); doneStep('login');
+    setAuthStatus('Логін виконано — перевіряємо токен…', 'info');
+    getUserInfo();
+  } else {
+    setStep('idle'); doneStep('idle');
+  }
+});
 </script>
 </body>
 </html>

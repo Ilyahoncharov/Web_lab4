@@ -4,4 +4,6 @@
 !.env.example
 certs/*.key
 certs/*.csr
+node_modules/
 ~$*.docx
+*.docx

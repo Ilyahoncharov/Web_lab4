@@ -1,0 +1,16 @@
+{
+  "name": "lab4-websocket-crypto",
+  "version": "1.0.0",
+  "description": "Lab 4 – Secure WebSocket real-time communication with Protobuf",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "protobufjs": "^7.4.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "docx": "^9.6.1"
+  }
+}

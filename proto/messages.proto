@@ -1,0 +1,21 @@
+syntax = "proto3";
+package crypto;
+
+message ClientMessage {
+  repeated string symbols = 1;
+}
+
+message PriceUpdate {
+  string symbol         = 1;
+  string price          = 2;
+  string change_percent = 3;
+  string timestamp      = 4;
+}
+
+message ServerMessage {
+  oneof payload {
+    PriceUpdate price_update = 1;
+    string      error        = 2;
+    string      info         = 3;
+  }
+}
