@@ -1,51 +1,49 @@
-# Лабораторна робота 3: Web-система з OIDC-авторизацією
+# Лабораторна робота 4: Захищена комунікація у реальному часі
 
-Проєкт демонструє роботу HTTPS web-застосунку з авторизацією через **Casdoor** за протоколом **OpenID Connect**. Користувач проходить login flow, застосунок отримує токени, зберігає їх у `HttpOnly` cookies та дозволяє отримати захищену інформацію про профіль.
+Розширення застосунку з лабораторної роботи №3: додано захищений **WebSocket-ендпоінт** з інтеграцією до **Binance Streaming API**, серіалізацією повідомлень у форматі **Protobuf** та перевіркою **OIDC-токена** при підключенні.
 
-## Основні можливості
+## Що реалізовано
 
-- HTTPS-сервер на Node.js без додаткових npm-залежностей.
-- Авторизація через Casdoor за OAuth2/OIDC authorization code flow.
-- Зберігання `id_token` та `access_token` у захищених cookies.
-- Захищений endpoint `/user-info`, який звертається до Casdoor `/api/userinfo`.
-- Docker Compose інфраструктура для Casdoor, MySQL та Nginx reverse proxy.
-- Секрети винесені в `.env`, а приклад конфігурації збережено в `.env.example`.
+- WSS-ендпоінт `/ws` на тому самому порту 443 (TLS 1.2, AES-GCM).
+- Підключення до Binance `miniTicker` стріму для 5 пар: BTC, ETH, SOL, ADA, XRP.
+- Protobuf-серіалізація всіх повідомлень (схема у `proto/messages.proto`).
+- Перевірка `access_token` (HttpOnly cookie) через Casdoor `/api/userinfo` при кожному підключенні.
+- Сесійна підписка: кожен клієнт отримує тільки ті монети, на які підписався.
+- Авто-реконект до Binance при розриві з'єднання.
+- Фронтенд: вибір монет, live-таблиця цін, WS-лог.
 
 ## Структура проєкту
 
 ```text
 .
+├── proto/
+│   └── messages.proto     # Protobuf-схема (ClientMessage, PriceUpdate, ServerMessage)
 ├── casdoor-conf/
 │   └── app.conf           # Конфігурація Casdoor
 ├── certs/
-│   ├── server.crt         # Локальний TLS-сертифікат
-│   ├── server.key         # Приватний ключ, не комітити
-│   └── v3.ext             # SAN-розширення для сертифіката
+│   ├── server.crt         # TLS-сертифікат
+│   └── v3.ext             # SAN-розширення
 ├── frontend/
-│   └── index.html         # UI для login/logout/user-info
+│   └── index.html         # UI: OIDC + WebSocket crypto stream
 ├── nginx/
 │   └── nginx.conf         # HTTPS proxy для Casdoor
 ├── docker-compose.yml     # MySQL, Casdoor, Nginx
-├── server.js              # Node.js HTTPS застосунок
-├── .env.example           # Приклад змінних середовища
+├── package.json           # ws, protobufjs
+├── server.js              # Node.js HTTPS/WSS сервер
+├── .env.example
 └── README.md
 ```
 
 ## Вимоги
 
-- Node.js 18 або новіше.
-- Docker та Docker Compose.
-- Браузер з можливістю прийняти локальний self-signed сертифікат.
+- Node.js 18+
+- Docker та Docker Compose
 
-## Налаштування змінних середовища
-
-Створи локальний файл `.env` на основі прикладу:
+## Налаштування
 
 ```bash
 cp .env.example .env
 ```
-
-Заповни значення:
 
 ```env
 MYSQL_ROOT_PASSWORD=change-me
@@ -61,108 +59,56 @@ TLS_KEY_PATH=./certs/server.key
 TLS_CERT_PATH=./certs/server.crt
 ```
 
-Файл `.env` містить секрети та не повинен потрапляти в репозиторій.
+## Запуск
 
-## Запуск Casdoor
-
-Підніми інфраструктуру:
+**1. Інфраструктура (Casdoor + MySQL):**
 
 ```bash
 docker compose up -d
 ```
 
-Після запуску будуть доступні:
-
-- Casdoor: `http://localhost:8000`
-- Casdoor через Nginx HTTPS proxy: `https://localhost:8443`
-- MySQL: всередині Docker-мережі як `mysql:3306`
-
-Перевірити стан контейнерів можна командою:
-
-```bash
-docker compose ps
-```
-
-## Налаштування Casdoor
-
-У Casdoor потрібно створити або налаштувати application для OIDC:
-
+**2. Налаштуй Casdoor** (`http://localhost:8000`, admin/123456):
+- Створи Application → скопіюй `client_id` та `client_secret` у `.env`
 - Redirect URI: `https://localhost/callback`
-- Grant type: authorization code
-- Scopes: `openid profile email`
-- Client ID: значення для `OIDC_CLIENT_ID`
-- Client secret: значення для `OIDC_CLIENT_SECRET`
 
-Після цього внеси `client_id` та `client_secret` у локальний `.env`.
-
-## Запуск Node.js застосунку
-
-Сервер слухає порти `443` та `80`, тому на macOS/Linux може знадобитися запуск з правами адміністратора:
+**3. Встанови залежності та запусти сервер:**
 
 ```bash
+npm install
 sudo node server.js
 ```
 
-Після запуску відкрий:
+Відкрий `https://localhost`, прийми self-signed сертифікат, залогінься через OIDC.
 
-```text
-https://localhost
-```
-
-Якщо браузер попередить про self-signed сертифікат, дозволь перехід для локального тестування.
-
-## Маршрути застосунку
+## Маршрути
 
 | Метод | URL | Опис |
-| --- | --- | --- |
-| `GET` | `/` | Перенаправлення на frontend |
-| `GET` | `/hello` | Тестовий endpoint лабораторної |
-| `GET` | `/login` | Старт OIDC login flow |
-| `GET` | `/callback` | Callback після авторизації |
-| `GET` | `/user-info` | Захищений ресурс з даними користувача |
-| `GET` | `/logout` | Очищення cookies та вихід |
-| `GET` | `/frontend/index.html` | Головний інтерфейс |
+|-------|-----|------|
+| `GET` | `/hello` | Тестовий endpoint |
+| `GET` | `/login` | Старт OIDC flow |
+| `GET` | `/callback` | OIDC callback |
+| `GET` | `/user-info` | Захищений ресурс |
+| `GET` | `/logout` | Вихід |
+| `WSS` | `/ws` | Crypto price stream (потребує токен) |
 
-## Безпека
+## WebSocket протокол
 
-- `OIDC_CLIENT_SECRET`, пароль MySQL та приватний TLS-ключ не зберігаються у відкритому вигляді в коді.
-- `.env` доданий у `.gitignore`.
-- `certs/*.key` доданий у `.gitignore`, щоб приватні ключі випадково не потрапили в Git.
-- Токени зберігаються в `HttpOnly`, `Secure`, `SameSite=Strict` cookies.
+Всі повідомлення серіалізуються у **Protobuf** (binary frames).
+
+**Клієнт → Сервер** (`ClientMessage`):
+```json
+{ "symbols": ["BTCUSDT", "ETHUSDT"] }
+```
+
+**Сервер → Клієнт** (`ServerMessage`):
+```json
+{ "priceUpdate": { "symbol": "BTCUSDT", "price": "97500.12", "changePercent": "+2.34", "timestamp": "..." } }
+```
 
 ## Корисні команди
 
-Зупинити Docker-сервіси:
-
 ```bash
-docker compose down
+docker compose logs -f casdoor   # логи Casdoor
+docker compose down -v            # повний скид (видаляє дані MySQL)
+node --check server.js            # перевірка синтаксису
 ```
-
-Переглянути логи Casdoor:
-
-```bash
-docker compose logs -f casdoor
-```
-
-Перевірити синтаксис Node.js файлу:
-
-```bash
-node --check server.js
-```
-
-Перевірити фінальну Docker Compose конфігурацію:
-
-```bash
-docker compose config
-```
-
-## Примітка щодо пароля MySQL
-
-Якщо змінити `MYSQL_ROOT_PASSWORD` після першого запуску, існуючий Docker volume `mysql-data` залишиться зі старим паролем. Для повного скидання локальної БД потрібно зупинити контейнери та видалити volume:
-
-```bash
-docker compose down -v
-docker compose up -d
-```
-
-Це видалить локальні дані MySQL, тому використовуй команду тільки для тестового середовища.
